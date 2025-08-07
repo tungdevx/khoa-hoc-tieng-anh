@@ -1,0 +1,890 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Greetings and Wishes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: linear-gradient(135deg, #FFF9E6, #FFE4B5, #FFFFFF);
+      font-family: 'Poppins', sans-serif;
+      color: #000000;
+      overflow-x: hidden;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    nav {
+      background: linear-gradient(135deg, #FFF9E6, #FFE4B5, #FFFFFF);
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-around;
+    }
+    nav a {
+      text-decoration: none;
+      color: #000000;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      font-size: 18px;
+      transition: color 0.3s ease;
+    }
+    nav a:hover {
+      color: #FF4500;
+    }
+    .section {
+      display: none;
+      background: linear-gradient(135deg, #FFF9E6, #FFE4B5, #FFFFFF);
+      padding: 2.5rem;
+      border-radius: 20px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      min-height: 500px;
+      animation: fadeIn 1s ease-in-out;
+    }
+    .section.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: #000000;
+      margin-bottom: 0.2rem;
+      text-align: center;
+    }
+    h2 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 24px;
+      font-weight: 500;
+      color: #000000;
+      margin-top: 0.2rem;
+      margin-bottom: 1.8rem;
+      text-align: center;
+    }
+    .flashcard {
+      background: linear-gradient(135deg, #FFF9E6, #FFE4B5, #FFFFFF);
+      padding: 2rem;
+      border-radius: 15px;
+      border: 2px solid #FFD700;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      position: relative;
+      min-height: 250px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      margin: 10px auto;
+      max-width: 600px;
+    }
+    .flashcard:hover {
+      transform: scale(1.03);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+    .divider {
+      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+      color: #FFD700;
+      margin: 0.6rem 0;
+    }
+    .speaker {
+      font-size: 24px;
+      color: #FF4500;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      margin-left: 4px;
+    }
+    .speaker:hover {
+      transform: scale(1.15);
+      color: #FFD700;
+    }
+    button {
+      margin-top: 1.8rem;
+      padding: 0.9rem 2rem;
+      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      color: #FFFFFF;
+      background: linear-gradient(45deg, #FFD700, #FF8C00);
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+    button:hover {
+      background: linear-gradient(45deg, #FF8C00, #FFD700);
+      transform: scale(1.06);
+    }
+    button:active {
+      transform: scale(0.95);
+    }
+    #vocabulary {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    #vocabulary .game-container {
+      display: grid;
+      gap: 10px;
+      background: linear-gradient(135deg, #FFF9E6, #FFE4B5, #FFFFFF);
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+    #vocabulary .card {
+      width: 120px;
+      height: 120px;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Poppins', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+      box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2), -2px -2px 4px rgba(255, 255, 255, 0.3);
+      overflow: hidden;
+      border: 3px solid #FFD700;
+      padding: 5px;
+      white-space: normal;
+      word-wrap: break-word;
+    }
+    #vocabulary .card.english {
+      background: linear-gradient(45deg, #FFD700, #FF8C00, #FFD700);
+      color: #000000;
+    }
+    #vocabulary .card.vietnamese {
+      background: linear-gradient(45deg, #FFF9E6, #FFE4B5, #FFF9E6);
+      color: #000000;
+    }
+    #vocabulary .card:hover {
+      transform: scale(1.05);
+      box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.25), -3px -3px 6px rgba(255, 255, 255, 0.4);
+    }
+    #vocabulary .card.flipped {
+      background: linear-gradient(45deg, #FFD700, #FF8C00);
+      color: #FFFFFF;
+      transform: rotateY(180deg);
+    }
+    #vocabulary .card.matched {
+      visibility: hidden;
+    }
+    #vocabulary .phonetic {
+      font-family: 'Poppins', sans-serif;
+      font-size: 8px;
+      font-style: italic;
+      color: #000000;
+      margin-top: 2px;
+    }
+    #vocabulary .cute-animal {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      width: 80px;
+      height: 80px;
+      background-image: url('https://via.placeholder.com/80?text=Cute+Greeting');
+      background-size: cover;
+      border-radius: 50%;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    #grammar .grammar-content {
+      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+      color: #000000;
+      text-align: left;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    #grammar .grammar-content h3 {
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+    #grammar .grammar-content p, #grammar .grammar-content li {
+      margin-bottom: 10px;
+    }
+    #dialogue .vietnamese {
+      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #000000;
+      margin-bottom: 0.8rem;
+      text-align: center;
+    }
+    #dialogue .english {
+      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+      color: #000000;
+      display: none;
+      font-weight: 500;
+      animation: slideIn 0.5s ease-in-out;
+      text-align: center;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+    }
+    #dialogue .english.show {
+      display: flex;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    #reflexive-sentences .vietnamese {
+      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #000000;
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    #reflexive-sentences .vietnamese-text {
+      flex-grow: 1;
+    }
+    #reflexive-sentences .english {
+      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+      color: #000000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+    }
+    #reflexive-sentences .english.show {
+      display: flex;
+    }
+    #questions .question {
+      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #000000;
+      margin-bottom: 0.8rem;
+    }
+    #questions .answer {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.5s ease-in-out;
+    }
+    #questions .answer.show {
+      display: flex;
+    }
+    #questions .answer-text {
+      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+      color: #000000;
+      font-weight: 500;
+      text-align: center;
+    }
+    #questions .answer-text b {
+      font-weight: 700;
+    }
+    #questions .answer-vietnamese {
+      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+      color: #333333;
+      font-weight: 500;
+      font-style: italic;
+      text-align: center;
+    }
+    #questions .answer-vietnamese b {
+      font-weight: 700;
+    }
+    #extra-activity {
+      text-align: center;
+    }
+    .activity {
+      background: linear-gradient(135deg, #FFF9E6, #FFE4B5, #FFFFFF);
+      padding: 20px;
+      border-radius: 10px;
+      margin: 10px 0;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+    .activity h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 20px;
+      font-weight: 500;
+      color: #000000;
+      margin-bottom: 10px;
+    }
+    .exercise {
+      margin-bottom: 20px;
+    }
+    .exercise p {
+      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      color: #000000;
+      margin-bottom: 10px;
+    }
+    .exercise ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    .exercise li {
+      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      color: #000000;
+      margin: 5px 0;
+    }
+    .progress {
+      margin-top: 20px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 16px;
+      color: #000000;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <a href="#vocabulary" onclick="showSection('vocabulary')">Vocabulary</a>
+      <a href="#grammar" onclick="showSection('grammar')">Grammar</a>
+      <a href="#dialogue" onclick="showSection('dialogue')">Dialogue</a>
+      <a href="#reflexive-sentences" onclick="showSection('reflexive-sentences')">Sentences</a>
+      <a href="#questions" onclick="showSection('questions')">Questions</a>
+      <a href="#extra-activity" onclick="showSection('extra-activity')">Extra Activity</a>
+    </nav>
+
+    <div id="vocabulary" class="section active">
+      <h1>GEN WISE LANGUAGE HUB</h1>
+      <h2>Greetings and Wishes Vocabulary Game</h2>
+      <div class="game-container" id="vocab-grid">
+        <div class="cute-animal"></div>
+      </div>
+      <div class="progress" id="vocab-progress">Matches: 0 / 14</div>
+      <button onclick="restartVocabGame()">Restart Game</button>
+    </div>
+
+    <div id="grammar" class="section">
+      <h1>GEN WISE LANGUAGE HUB</h1>
+      <h2>Grammar: Present Simple with "to be"</h2>
+      <div class="grammar-content">
+        <h3>Structure:</h3>
+        <p>Subject + am/is/are + complement</p>
+        <h3>Usage:</h3>
+        <p>Describes a state, emotion, or fact in the present. Often used in greetings to express emotions or describe someone.</p>
+        <h3>Examples:</h3>
+        <ul>
+          <li>I <b>am</b> happy to meet you. (Tôi vui khi gặp bạn.)</li>
+          <li>She <b>is</b> my friend. (Cô ấy là bạn của tôi.)</li>
+          <li>We <b>are</b> nice people. (Chúng tôi là người tốt.)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div id="dialogue" class="section">
+      <h1>GEN WISE LANGUAGE HUB</h1>
+      <h2>Dialogue Flashcards</h2>
+      <div class="flashcard" id="dialogue-flashcard">
+        <div class="vietnamese" id="dialogue-vietnamese"></div>
+        <div class="divider">-----------------------------------</div>
+        <div class="english" id="dialogue-english">
+          <span id="dialogue-english-text"></span>
+          <span class="speaker" id="dialogue-speaker">🎙️</span>
+        </div>
+      </div>
+      <button id="dialogue-next">Next Card</button>
+    </div>
+
+    <div id="reflexive-sentences" class="section">
+      <h1>GEN WISE LANGUAGE HUB</h1>
+      <h2>Sentence Flashcards</h2>
+      <div class="flashcard" id="reflexive-flashcard">
+        <div class="vietnamese" id="reflexive-vietnamese">
+          <span class="vietnamese-text" id="reflexive-vietnamese-text"></span>
+        </div>
+        <div class="divider">-----------------------------------</div>
+        <div class="english" id="reflexive-english">
+          <span id="reflexive-english-text"></span>
+          <span class="speaker" id="reflexive-speaker">🎙️</span>
+        </div>
+      </div>
+      <button id="reflexive-next">Next Card</button>
+    </div>
+
+    <div id="questions" class="section">
+      <h1>GEN WISE LANGUAGE HUB</h1>
+      <h2>Question Flashcards</h2>
+      <div class="flashcard" id="questions-flashcard">
+        <div class="question" id="questions-question"></div>
+        <div class="divider">-----------------------------------</div>
+        <div class="answer" id="questions-answer">
+          <div class="answer-text" id="questions-answer-english"></div>
+          <div class="answer-vietnamese" id="questions-answer-vietnamese"></div>
+          <span class="speaker" id="questions-speaker">🎙️</span>
+        </div>
+      </div>
+      <button id="questions-next">Next Card</button>
+    </div>
+
+    <div id="extra-activity" class="section">
+      <h1>GEN WISE LANGUAGE HUB</h1>
+      <h2>Extra Activities</h2>
+      <div class="activity">
+        <h3>Matching Game</h3>
+        <div class="exercise">
+          <p>Match the English term to its Vietnamese meaning.</p>
+          <ul>
+            <li>1. <strong>hello</strong>: a. Tốt</li>
+            <li>2. <strong>friend</strong>: b. Xin chào</li>
+            <li>3. <strong>happy</strong>: c. Bạn bè</li>
+            <li>4. <strong>good</strong>: d. Nụ cười</li>
+            <li>5. <strong>smile</strong>: e. Vui vẻ</li>
+          </ul>
+          <button onclick="alert('Answers: 1-b, 2-c, 3-e, 4-a, 5-d')">Check Answers</button>
+        </div>
+      </div>
+      <div class="activity">
+        <h3>Fill-in-the-Blank Exercise</h3>
+        <div class="exercise">
+          <p>Complete the sentences with the correct term from the vocabulary list.</p>
+          <ul>
+            <li>1. I say ______ to everyone when I enter the room.</li>
+            <li>2. She is my best ______ at school.</li>
+            <li>3. Your ______ makes everyone feel happy.</li>
+            <li>4. We ______ new people at the party.</li>
+            <li>5. I ______ for a good day every morning.</li>
+          </ul>
+          <button onclick="alert('Answers:\n1. hello\n2. friend\n3. smile\n4. meet\n5. wish')">Check Answers</button>
+        </div>
+      </div>
+      <div class="activity">
+        <h3>Reading Comprehension</h3>
+        <div class="exercise">
+          <p><strong>A New Friend</strong><br>Hello! My name is Mai. Today is a <b>good</b> day. I <b>meet</b> a new <b>friend</b> at school. His name is Nam. He has a <b>nice</b> <b>smile</b>. We <b>hit it off</b> quickly. I say, “<b>Yo</b>, Nam! Let’s be <b>friends</b>!” Nam is <b>happy</b> and says, “Yes, I <b>wish</b> we have fun!” We talk and laugh. It’s easy to <b>break the ice</b> with him. I say, “<b>Goodbye</b>, Nam! See you tomorrow!” He says, “Have a <b>good</b> day, Mai!” I feel <b>happy</b>.</p>
+          <p><strong>Questions:</strong></p>
+          <ul>
+            <li>1. What is Mai’s new friend’s name?</li>
+            <li>2. What does Mai say to Nam to become friends?</li>
+            <li>3. How does Nam feel?</li>
+          </ul>
+          <button onclick="alert('Answers:\n1. Nam\n2. Yo, Nam! Let’s be friends!\n3. Nam is happy.')">Check Answers</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    // Sound Effects
+    const clickSound = new Audio('https://www.soundjay.com/buttons/button4-01a.mp3');
+    const revealSound = new Audio('https://www.soundjay.com/buttons/button17.mp3');
+
+    function playClickSound() {
+      clickSound.play().catch(error => console.log("Sound play failed:", error));
+    }
+
+    function playRevealSound() {
+      revealSound.play().catch(error => console.log("Sound play failed:", error));
+    }
+
+    function showSection(sectionId) {
+      document.querySelectorAll('.section').forEach(section => {
+        section.classList.remove('active');
+      });
+      document.getElementById(sectionId).classList.add('active');
+      playClickSound();
+    }
+
+    // Vocabulary Data
+    const vocabulary = [
+      { english: "hello", phonetic: "/həˈloʊ/", vietnamese: "Xin chào" },
+      { english: "goodbye", phonetic: "/ˌɡʊdˈbaɪ/", vietnamese: "Tạm biệt" },
+      { english: "friend", phonetic: "/frɛnd/", vietnamese: "Bạn bè" },
+      { english: "happy", phonetic: "/ˈhæpi/", vietnamese: "Vui vẻ, hạnh phúc" },
+      { english: "wish", phonetic: "/wɪʃ/", vietnamese: "Điều ước, chúc" },
+      { english: "nice", phonetic: "/naɪs/", vietnamese: "Tốt, đẹp" },
+      { english: "meet", phonetic: "/mit/", vietnamese: "Gặp" },
+      { english: "day", phonetic: "/deɪ/", vietnamese: "Ngày" },
+      { english: "good", phonetic: "/ɡʊd/", vietnamese: "Tốt" },
+      { english: "smile", phonetic: "/smaɪl/", vietnamese: "Nụ cười, cười" },
+      { english: "polite", phonetic: "/pəˈlaɪt/", vietnamese: "Lịch sự" },
+      { english: "yo", phonetic: "/joʊ/", vietnamese: "Chào (thân mật)" },
+      { english: "break the ice", phonetic: "/breɪk ðə aɪs/", vietnamese: "Phá vỡ sự ngại ngùng" },
+      { english: "hit it off", phonetic: "/hɪt ɪt ɔf/", vietnamese: "Hợp nhau ngay" }
+    ];
+
+    // Dialogue Data
+    const dialogue = [
+      { vietnamese: "Chào, Tom! Xin chào!", english: "<b>Yo</b>, Tom! <b>Hello</b>!" },
+      { vietnamese: "Chào, Anna! Rất vui được gặp bạn.", english: "Hi, Anna! <b>Nice</b> to <b>meet</b> you." },
+      { vietnamese: "Tôi vui khi ở trong lớp này!", english: "I’m <b>happy</b> in this class!" },
+      { vietnamese: "Tôi cũng vậy! Bạn có nụ cười đẹp.", english: "Me too! You have a <b>nice</b> <b>smile</b>." },
+      { vietnamese: "Cảm ơn! Giờ chúng ta là bạn chứ?", english: "Thanks! Are we <b>friends</b> now?" },
+      { vietnamese: "Đúng vậy, chúng ta hợp nhau ngay!", english: "Yes, we <b>hit it off</b>!" },
+      { vietnamese: "Tốt! Hãy phá vỡ sự ngại ngùng hôm nay.", english: "<b>Good</b>! Let’s <b>break the ice</b> today." },
+      { vietnamese: "Được thôi, tạm biệt nhé, Anna!", english: "Okay, <b>goodbye</b> for now, Anna!" },
+      { vietnamese: "Tạm biệt, Tom! Chúc ngày tốt lành!", english: "<b>Bye</b>, Tom! Have a <b>good</b> <b>day</b>!" },
+      { vietnamese: "Chào, bạn cũng vậy!", english: "<b>Yo</b>, you too!" }
+    ];
+
+    // Reflexive Sentences Data
+    const reflexiveSentences = [
+      { vietnamese: "Khi vào lớp, tôi nói “Xin chào” với mọi người.", english: "I say “<b>Hello</b>” to everyone." },
+      { vietnamese: "Khi rời buổi tiệc, tôi nói “Tạm biệt” với bạn bè.", english: "I say “<b>Goodbye</b>” to my <b>friends</b>." },
+      { vietnamese: "Minh là bạn thân của tôi ở trường.", english: "Minh is my best <b>friend</b> at school." },
+      { vietnamese: "Tôi cảm thấy hạnh phúc khi gặp gia đình.", english: "I feel <b>happy</b> when I see my family." },
+      { vietnamese: "Tôi điều ước sức khỏe tốt mỗi ngày.", english: "I <b>wish</b> for <b>good</b> health every <b>day</b>." },
+      { vietnamese: "Cô ấy có tính cách tốt và tử tế.", english: "She has a <b>nice</b> personality." },
+      { vietnamese: "Tôi muốn gặp giáo viên sau giờ học.", english: "I want to <b>meet</b> my teacher after class." },
+      { vietnamese: "Hôm nay là một ngày đẹp để đi chơi.", english: "Today is a beautiful <b>day</b> to go out." },
+      { vietnamese: "Đây là một cuốn sách tốt để đọc.", english: "This is a <b>good</b> book to read." },
+      { vietnamese: "Nụ cười của cô ấy làm mọi người vui.", english: "Her <b>smile</b> makes everyone <b>happy</b>." },
+      { vietnamese: "Tôi nói “Chào” với bạn bè một cách vui vẻ.", english: "I say “<b>Yo</b>” to my <b>friends</b>." },
+      { vietnamese: "Tôi kể chuyện cười để phá vỡ sự ngại ngùng.", english: "I tell a joke to <b>break the ice</b>." },
+      { vietnamese: "Chúng tôi hợp nhau ngay khi nói về âm nhạc.", english: "We <b>hit it off</b> when we talked about music." }
+    ];
+
+    // Questions Data
+    const questions = [
+      {
+        question: "What is your name?",
+        vietnamese: "Tên của bạn là gì?",
+        answer_english: "My name is Linh. I am <b>happy</b> to tell you. It’s a <b>nice</b> name, right?",
+        answer_vietnamese: "Tên tôi là Linh. Tôi <b>vui</b> khi nói với bạn. Tên <b>đẹp</b>, phải không?"
+      },
+      {
+        question: "Do you say “Hello” to your friends?",
+        vietnamese: "Bạn có nói “Xin chào” với bạn bè không?",
+        answer_english: "Yes, I say “<b>Hello</b>” to my <b>friends</b>. It makes them <b>smile</b>. I like it.",
+        answer_vietnamese: "Vâng, tôi nói “<b>Xin chào</b>” với <b>bạn bè</b>. Điều đó khiến họ <b>cười</b>. Tôi thích vậy."
+      },
+      {
+        question: "Are you happy today?",
+        vietnamese: "Hôm nay bạn có vui không?",
+        answer_english: "Yes, I am <b>happy</b> today. It’s a <b>good</b> <b>day</b>. I <b>smile</b> a lot.",
+        answer_vietnamese: "Vâng, hôm nay tôi <b>vui</b>. Đó là một <b>ngày tốt</b>. Tôi <b>cười</b> nhiều."
+      },
+      {
+        question: "Do you have a friend?",
+        vietnamese: "Bạn có bạn bè không?",
+        answer_english: "Yes, I have a <b>friend</b>. She is <b>nice</b> and kind. We <b>meet</b> often.",
+        answer_vietnamese: "Vâng, tôi có một <b>bạn</b>. Cô ấy <b>tốt</b> và tử tế. Chúng tôi thường <b>gặp</b> nhau."
+      },
+      {
+        question: "Do you say “Yo” to people?",
+        vietnamese: "Bạn có nói “Chào” với mọi người không?",
+        answer_english: "Sometimes, I say “<b>Yo</b>” to my <b>friends</b>. It’s fun and <b>nice</b>. They like it.",
+        answer_vietnamese: "Thỉnh thoảng, tôi nói “<b>Chào</b>” với <b>bạn bè</b>. Nó vui và <b>tốt</b>. Họ thích điều đó."
+      },
+      {
+        question: "What do you wish for?",
+        vietnamese: "Bạn điều ước điều gì?",
+        answer_english: "I <b>wish</b> for a <b>good</b> <b>day</b>. I want to be <b>happy</b>. It feels great.",
+        answer_vietnamese: "Tôi <b>mong</b> có một <b>ngày tốt</b>. Tôi muốn <b>hạnh phúc</b>. Cảm giác tuyệt vời."
+      },
+      {
+        question: "Do you like to smile?",
+        vietnamese: "Bạn có thích cười không?",
+        answer_english: "Yes, I like to <b>smile</b>. It makes my <b>day</b> better. People think it’s <b>nice</b>.",
+        answer_vietnamese: "Vâng, tôi thích <b>cười</b>. Nó làm <b>ngày</b> của tôi tốt hơn. Mọi người nghĩ nó <b>đẹp</b>."
+      },
+      {
+        question: "Do you meet new people?",
+        vietnamese: "Bạn có gặp người mới không?",
+        answer_english: "Yes, I <b>meet</b> new people. I say “<b>Hello</b>” and <b>smile</b>. It’s fun.",
+        answer_vietnamese: "Vâng, tôi <b>gặp</b> người mới. Tôi nói “<b>Xin chào</b>” và <b>cười</b>. Thật vui."
+      },
+      {
+        question: "Do you say “Goodbye”?",
+        vietnamese: "Bạn có nói “Tạm biệt” không?",
+        answer_english: "Yes, I say “<b>Goodbye</b>” to my <b>friends</b>. It’s <b>polite</b> and <b>nice</b>. I like it.",
+        answer_vietnamese: "Vâng, tôi nói “<b>Tạm biệt</b>” với <b>bạn bè</b>. Nó <b>lịch sự</b> và <b>tốt</b>. Tôi thích vậy."
+      },
+      {
+        question: "Is today a good day?",
+        vietnamese: "Hôm nay là một ngày tốt chứ?",
+        answer_english: "Yes, today is a <b>good</b> <b>day</b>. I am <b>happy</b> and <b>smile</b>. It’s great.",
+        answer_vietnamese: "Vâng, hôm nay là một <b>ngày tốt</b>. Tôi <b>hạnh phúc</b> và <b>cười</b>. Thật tuyệt."
+      }
+    ];
+
+    // Vocabulary Matching Game
+    let vocabFirstCard = null;
+    let vocabSecondCard = null;
+    let vocabLockBoard = false;
+    let vocabMatches = 0;
+
+    function initVocabGame() {
+      vocabMatches = 0;
+      document.getElementById('vocab-progress').textContent = 'Matches: 0 / 14';
+      const gameBoard = document.getElementById('vocab-grid');
+      gameBoard.innerHTML = '<div class="cute-animal"></div>';
+      const shuffledCards = [...vocabulary.map(w => ({ ...w, type: 'english' })), ...vocabulary.map(w => ({ ...w, type: 'vietnamese' }))].sort(() => Math.random() - 0.5);
+
+      const cardWidth = 120;
+      const gap = 10;
+      const containerWidth = gameBoard.parentElement.offsetWidth;
+      const columns = Math.min(8, Math.floor(containerWidth / (cardWidth + gap)));
+      gameBoard.style.gridTemplateColumns = `repeat(${columns}, ${cardWidth}px)`;
+
+      shuffledCards.forEach((card, index) => {
+        const cardElement = document.createElement('div');
+        cardElement.classList.add('card', card.type);
+        cardElement.dataset.word = card.english;
+        cardElement.dataset.type = card.type;
+        if (card.type === 'english') {
+          cardElement.innerHTML = `<span>${card.english}</span><div class="phonetic">${card.phonetic}</div>`;
+        } else {
+          cardElement.textContent = card.vietnamese;
+        }
+        cardElement.addEventListener('click', flipVocabCard);
+        gameBoard.appendChild(cardElement);
+      });
+    }
+
+    function flipVocabCard() {
+      if (vocabLockBoard || this.classList.contains('matched') || this === vocabFirstCard) return;
+
+      this.classList.add('flipped');
+      if (this.dataset.type === 'english') {
+        const utterance = new SpeechSynthesisUtterance(this.dataset.word);
+        utterance.lang = 'en-US';
+        speechSynthesis.speak(utterance);
+      }
+      playClickSound();
+
+      if (!vocabFirstCard) {
+        vocabFirstCard = this;
+        return;
+      }
+
+      vocabSecondCard = this;
+      checkVocabMatch();
+    }
+
+    function checkVocabMatch() {
+      const isMatch = vocabFirstCard.dataset.word === vocabSecondCard.dataset.word && vocabFirstCard.dataset.type !== vocabSecondCard.dataset.type;
+
+      if (isMatch) {
+        vocabFirstCard.classList.add('matched');
+        vocabSecondCard.classList.add('matched');
+        vocabMatches++;
+        document.getElementById('vocab-progress').textContent = `Matches: ${vocabMatches} / 14`;
+        playRevealSound();
+        if (vocabMatches === 14) {
+          setTimeout(() => alert('Congratulations! You matched all vocabulary cards!'), 500);
+        }
+        resetVocabBoard();
+      } else {
+        vocabLockBoard = true;
+        setTimeout(() => {
+          vocabFirstCard.classList.remove('flipped');
+          vocabSecondCard.classList.remove('flipped');
+          resetVocabBoard();
+        }, 1000);
+      }
+    }
+
+    function resetVocabBoard() {
+      vocabFirstCard = null;
+      vocabSecondCard = null;
+      vocabLockBoard = false;
+    }
+
+    function restartVocabGame() {
+      initVocabGame();
+      playClickSound();
+    }
+
+    // Dialogue Flashcards
+    let dialogueIndex = 0;
+    function initDialogueGame() {
+      const flashcard = document.getElementById('dialogue-flashcard');
+      const vietnamese = document.getElementById('dialogue-vietnamese');
+      const english = document.getElementById('dialogue-english');
+      const englishText = document.getElementById('dialogue-english-text');
+      const speaker = document.getElementById('dialogue-speaker');
+
+      function loadCard(index) {
+        vietnamese.textContent = dialogue[index].vietnamese;
+        englishText.innerHTML = dialogue[index].english;
+        english.classList.remove('show');
+      }
+
+      flashcard.addEventListener('click', () => {
+        english.classList.toggle('show');
+        if (english.classList.contains('show')) {
+          playRevealSound();
+        }
+      });
+
+      speaker.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const text = englishText.innerHTML.replace(/<b>|<\/b>/g, '');
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        speechSynthesis.speak(utterance);
+        playClickSound();
+      });
+
+      document.getElementById('dialogue-next').addEventListener('click', () => {
+        dialogueIndex = (dialogueIndex + 1) % dialogue.length;
+        loadCard(dialogueIndex);
+        playClickSound();
+      });
+
+      loadCard(dialogueIndex);
+    }
+
+    // Reflexive Sentences Flashcards
+    let reflexiveIndex = 0;
+    function initReflexiveGame() {
+      const flashcard = document.getElementById('reflexive-flashcard');
+      const vietnameseText = document.getElementById('reflexive-vietnamese-text');
+      const englishText = document.getElementById('reflexive-english-text');
+      const englishContainer = document.getElementById('reflexive-english');
+      const speaker = document.getElementById('reflexive-speaker');
+
+      function loadCard() {
+        vietnameseText.textContent = reflexiveSentences[reflexiveIndex].vietnamese;
+        englishText.innerHTML = reflexiveSentences[reflexiveIndex].english;
+        englishContainer.classList.remove('show');
+      }
+
+      flashcard.addEventListener('click', () => {
+        englishContainer.classList.toggle('show');
+        if (englishContainer.classList.contains('show')) {
+          playRevealSound();
+        }
+      });
+
+      speaker.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const text = englishText.innerHTML.replace(/<b>|<\/b>/g, '');
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        speechSynthesis.speak(utterance);
+        playClickSound();
+      });
+
+      document.getElementById('reflexive-next').addEventListener('click', () => {
+        reflexiveIndex = (reflexiveIndex + 1) % reflexiveSentences.length;
+        loadCard();
+        playClickSound();
+      });
+
+      loadCard();
+    }
+
+    // Questions Flashcards
+    let questionsIndex = 0;
+    function initQuestions() {
+      const flashcard = document.getElementById('questions-flashcard');
+      const question = document.getElementById('questions-question');
+      const answer = document.getElementById('questions-answer');
+      const answerEnglish = document.getElementById('questions-answer-english');
+      const answerVietnamese = document.getElementById('questions-answer-vietnamese');
+      const speaker = document.getElementById('questions-speaker');
+
+      function loadQuestion() {
+        question.textContent = questions[questionsIndex].question;
+        answerEnglish.innerHTML = questions[questionsIndex].answer_english;
+        answerVietnamese.innerHTML = questions[questionsIndex].answer_vietnamese;
+        answer.classList.remove('show');
+      }
+
+      flashcard.addEventListener('click', () => {
+        answer.classList.toggle('show');
+        if (answer.classList.contains('show')) {
+          playRevealSound();
+        }
+      });
+
+      speaker.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const text = answerEnglish.innerHTML.replace(/<b>|<\/b>/g, '');
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        speechSynthesis.speak(utterance);
+        playClickSound();
+      });
+
+      document.getElementById('questions-next').addEventListener('click', () => {
+        questionsIndex = (questionsIndex + 1) % questions.length;
+        loadQuestion();
+        playClickSound();
+      });
+
+      loadQuestion();
+    }
+
+    // playfully greet user on page load
+    window.onload = function() {
+      alert("Yo! Welcome to the Greetings and Wishes learning hub! Let's break the ice and have a good day!");
+    }
+
+    // Initialize Games
+    initVocabGame();
+    initDialogueGame();
+    initReflexiveGame();
+    initQuestions();
+
+    // Resize Handler
+    window.addEventListener('resize', initVocabGame);
+  </script>
+</body>
+</html>
