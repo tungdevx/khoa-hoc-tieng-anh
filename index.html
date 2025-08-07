@@ -35,7 +35,7 @@
     nav .logo {
       font-family: 'Montserrat', sans-serif;
       font-weight: 700;
-      font-size: 15px;
+      font-size: 20px;
       color: #FFFFFF;
       letter-spacing: 1px;
     }
@@ -63,8 +63,8 @@
       background: none;
       border: none;
       cursor: pointer;
+      margin-top: 0px;
       padding: 10px;
-      margin-top:0px;
     }
     .nav-toggle span,
     .nav-toggle span::before,
@@ -225,12 +225,16 @@
     }
     #vocabulary .game-container {
       display: grid;
-      gap: 10px;
+      gap: 12px; /* Equivalent to Tailwind's gap-3 (0.75rem = 12px) */
       background: linear-gradient(135deg, #FFF9E6, #FFE4B5, #FFFFFF);
       padding: 20px;
       border-radius: 15px;
       box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
       position: relative;
+      justify-content: center;
+      width: 100%;
+      max-width: 960px; /* Ensure container doesn't stretch too wide */
+      box-sizing: border-box;
     }
     #vocabulary .card {
       width: 120px;
@@ -252,6 +256,7 @@
       padding: 5px;
       white-space: normal;
       word-wrap: break-word;
+      box-sizing: border-box;
     }
     #vocabulary .card.english {
       background: linear-gradient(45deg, #FFD700, #FF8C00, #FFD700);
