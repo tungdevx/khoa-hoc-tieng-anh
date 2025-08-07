@@ -1,43 +1,4 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -59,24 +20,110 @@
       padding: 20px;
     }
     nav {
-      background: linear-gradient(135deg, #FFF9E6, #FFE4B5, #FFFFFF);
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
+      background: linear-gradient(135deg, #FFD700, #FF8C00);
+      padding: 15px 30px;
       display: flex;
-      justify-content: space-around;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 15px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+      margin-bottom: 20px;
+      position: sticky;
+      top: 6px;
+      z-index: 1000;
     }
-    nav a {
+    nav .logo {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: #FFFFFF;
+      letter-spacing: 1px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+    .nav-links a {
       text-decoration: none;
-      color: #000000;
-      font-family: 'Poppins', sans-serif;
+      color: #FFFFFF;
       font-weight: 500;
-      font-size: 18px;
-      transition: color 0.3s ease;
+      font-size: 16px;
+      padding: 8px 15px;
+      border-radius: 20px;
+      transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease;
     }
-    nav a:hover {
-      color: #FF4500;
+    .nav-links a:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #FFF9E6;
+      transform: translateY(-2px);
+    }
+    .nav-toggle {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 10px;
+      margin-top:0px;
+    }
+    .nav-toggle span,
+    .nav-toggle span::before,
+    .nav-toggle span::after {
+      display: block;
+      background: #FFFFFF;
+      height: 3px;
+      width: 25px;
+      border-radius: 3px;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    .nav-toggle span::before,
+    .nav-toggle span::after {
+      content: '';
+      position: absolute;
+      left: 0;
+    }
+    .nav-toggle span::before {
+      top: -8px;
+    }
+    .nav-toggle span::after {
+      top: 8px;
+    }
+    .nav-toggle.open span {
+      background: transparent;
+    }
+    .nav-toggle.open span::before {
+      transform: rotate(45deg) translate(5px, 5px);
+    }
+    .nav-toggle.open span::after {
+      transform: rotate(-45deg) translate(5px, -5px);
+    }
+    @media (max-width: 768px) {
+      .nav-links {
+        position: absolute;
+        top: 70px;
+        right: 20px;
+        background: linear-gradient(135deg, #FFD700, #FF8C00);
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 1.5rem;
+        border-radius: 15px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        display: none;
+        width: 200px;
+      }
+      .nav-links.open {
+        display: flex;
+      }
+      .nav-links a {
+        width: 100%;
+        text-align: center;
+        padding: 10px;
+        font-size: 14px;
+      }
+      .nav-toggle {
+        display: block;
+      }
     }
     .section {
       display: none;
@@ -401,14 +448,17 @@
 <body>
   <div class="container">
     <nav>
-      <a href="#vocabulary" onclick="showSection('vocabulary')">Vocabulary</a>
-      <a href="#grammar" onclick="showSection('grammar')">Grammar</a>
-      <a href="#dialogue" onclick="showSection('dialogue')">Dialogue</a>
-      <a href="#reflexive-sentences" onclick="showSection('reflexive-sentences')">Sentences</a>
-      <a href="#questions" onclick="showSection('questions')">Questions</a>
-      <a href="#extra-activity" onclick="showSection('extra-activity')">Extra Activity</a>
+      <div class="logo">GEN WISE LANGUAGE HUB</div>
+      <button class="nav-toggle" aria-label="Toggle navigation"><span></span></button>
+      <div class="nav-links">
+        <a href="#vocabulary" onclick="showSection('vocabulary')">Vocabulary</a>
+        <a href="#grammar" onclick="showSection('grammar')">Grammar</a>
+        <a href="#dialogue" onclick="showSection('dialogue')">Dialogue</a>
+        <a href="#reflexive-sentences" onclick="showSection('reflexive-sentences')">Sentences</a>
+        <a href="#questions" onclick="showSection('questions')">Questions</a>
+        <a href="#extra-activity" onclick="showSection('extra-activity')">Extra Activity</a>
+      </div>
     </nav>
-
     <div id="vocabulary" class="section active">
       <h1>GEN WISE LANGUAGE HUB</h1>
       <h2>Greetings and Wishes Vocabulary Game</h2>
@@ -527,8 +577,10 @@
       </div>
     </div>
   </div>
-
   <script type="text/javascript">
+        const toggleButton = document.querySelector('.nav-toggle');
+    const navLinks = document.querySelector('.nav-links');
+    toggleButton.addEventListener('click', () => navLinks.classList.toggle('open'));
     // Sound Effects
     const clickSound = new Audio('https://www.soundjay.com/buttons/button4-01a.mp3');
     const revealSound = new Audio('https://www.soundjay.com/buttons/button17.mp3');
