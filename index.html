@@ -583,19 +583,67 @@
     </div>
   </div>
   <script type="text/javascript">
-        const toggleButton = document.querySelector('.nav-toggle');
+       var gk_isXlsx = false;
+    var gk_xlsxFileLookup = {};
+    var gk_fileData = {};
+    function filledCell(cell) {
+      return cell !== '' && cell != null;
+    }
+    function loadFileData(filename) {
+      if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+        try {
+          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+          var firstSheetName = workbook.SheetNames[0];
+          var worksheet = workbook.Sheets[firstSheetName];
+          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+          var filteredData = jsonData.filter(row => row.some(filledCell));
+          var headerRowIndex = filteredData.findIndex((row, index) =>
+            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+          );
+          if (headerRowIndex === -1 || headerRowIndex > 25) {
+            headerRowIndex = 0;
+          }
+          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+          return csv;
+        } catch (e) {
+          console.error(e);
+          return "";
+        }
+      }
+      return gk_fileData[filename] || "";
+    }
+
+    const toggleButton = document.querySelector('.nav-toggle');
     const navLinks = document.querySelector('.nav-links');
-    toggleButton.addEventListener('click', () => navLinks.classList.toggle('open'));
-    // Sound Effects
+    toggleButton.addEventListener('click', () => {
+      navLinks.classList.toggle('open');
+      toggleButton.classList.toggle('open');
+      playClickSound();
+    });
+
     const clickSound = new Audio('https://www.soundjay.com/buttons/button4-01a.mp3');
     const revealSound = new Audio('https://www.soundjay.com/buttons/button17.mp3');
 
     function playClickSound() {
-      clickSound.play().catch(error => console.log("Sound play failed:", error));
+      // Ensure audio context is resumed
+      if (typeof clickSound.play === 'function') {
+        clickSound.play().catch(error => {
+          console.error("Click sound play failed:", error);
+        });
+      } else {
+        console.error("Audio object not properly initialized for click sound");
+      }
     }
 
     function playRevealSound() {
-      revealSound.play().catch(error => console.log("Sound play failed:", error));
+      if (typeof revealSound.play === 'function') {
+        revealSound.play().catch(error => {
+          console.error("Reveal sound play failed:", error);
+        });
+      } else {
+        console.error("Audio object not properly initialized for reveal sound");
+      }
     }
 
     function showSection(sectionId) {
@@ -603,10 +651,26 @@
         section.classList.remove('active');
       });
       document.getElementById(sectionId).classList.add('active');
-      playClickSound();
+      navLinks.classList.remove('open');
+      toggleButton.classList.remove('open');
+      // Ensure audio context is active before playing
+      if (window.AudioContext || window.webkitAudioContext) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const context = new AudioContext();
+        if (context.state === 'suspended') {
+          context.resume().then(() => {
+            playClickSound();
+          }).catch(error => {
+            console.error("Failed to resume audio context:", error);
+          });
+        } else {
+          playClickSound();
+        }
+      } else {
+        playClickSound();
+      }
     }
 
-    // Vocabulary Data
     const vocabulary = [
       { english: "hello", phonetic: "/həˈloʊ/", vietnamese: "Xin chào" },
       { english: "goodbye", phonetic: "/ˌɡʊdˈbaɪ/", vietnamese: "Tạm biệt" },
@@ -624,7 +688,6 @@
       { english: "hit it off", phonetic: "/hɪt ɪt ɔf/", vietnamese: "Hợp nhau ngay" }
     ];
 
-    // Dialogue Data
     const dialogue = [
       { vietnamese: "Chào, Tom! Xin chào!", english: "<b>Yo</b>, Tom! <b>Hello</b>!" },
       { vietnamese: "Chào, Anna! Rất vui được gặp bạn.", english: "Hi, Anna! <b>Nice</b> to <b>meet</b> you." },
@@ -638,7 +701,6 @@
       { vietnamese: "Chào, bạn cũng vậy!", english: "<b>Yo</b>, you too!" }
     ];
 
-    // Reflexive Sentences Data
     const reflexiveSentences = [
       { vietnamese: "Khi vào lớp, tôi nói “Xin chào” với mọi người.", english: "I say “<b>Hello</b>” to everyone." },
       { vietnamese: "Khi rời buổi tiệc, tôi nói “Tạm biệt” với bạn bè.", english: "I say “<b>Goodbye</b>” to my <b>friends</b>." },
@@ -655,7 +717,6 @@
       { vietnamese: "Chúng tôi hợp nhau ngay khi nói về âm nhạc.", english: "We <b>hit it off</b> when we talked about music." }
     ];
 
-    // Questions Data
     const questions = [
       {
         question: "What is your name?",
@@ -719,7 +780,6 @@
       }
     ];
 
-    // Vocabulary Matching Game
     let vocabFirstCard = null;
     let vocabSecondCard = null;
     let vocabLockBoard = false;
@@ -733,10 +793,11 @@
       const shuffledCards = [...vocabulary.map(w => ({ ...w, type: 'english' })), ...vocabulary.map(w => ({ ...w, type: 'vietnamese' }))].sort(() => Math.random() - 0.5);
 
       const cardWidth = 120;
-      const gap = 10;
-      const containerWidth = gameBoard.parentElement.offsetWidth;
-      const columns = Math.min(8, Math.floor(containerWidth / (cardWidth + gap)));
+      const gap = 12;
+      const containerWidth = Math.min(gameBoard.parentElement.offsetWidth, 960);
+      const columns = Math.min(8, Math.floor((containerWidth - 40) / (cardWidth + gap)));
       gameBoard.style.gridTemplateColumns = `repeat(${columns}, ${cardWidth}px)`;
+      gameBoard.style.gap = `${gap}px`;
 
       shuffledCards.forEach((card, index) => {
         const cardElement = document.createElement('div');
@@ -807,7 +868,6 @@
       playClickSound();
     }
 
-    // Dialogue Flashcards
     let dialogueIndex = 0;
     function initDialogueGame() {
       const flashcard = document.getElementById('dialogue-flashcard');
@@ -847,7 +907,6 @@
       loadCard(dialogueIndex);
     }
 
-    // Reflexive Sentences Flashcards
     let reflexiveIndex = 0;
     function initReflexiveGame() {
       const flashcard = document.getElementById('reflexive-flashcard');
@@ -887,7 +946,6 @@
       loadCard();
     }
 
-    // Questions Flashcards
     let questionsIndex = 0;
     function initQuestions() {
       const flashcard = document.getElementById('questions-flashcard');
@@ -929,18 +987,15 @@
       loadQuestion();
     }
 
-    // playfully greet user on page load
     window.onload = function() {
       alert("Yo! Welcome to the Greetings and Wishes learning hub! Let's break the ice and have a good day!");
     }
 
-    // Initialize Games
     initVocabGame();
     initDialogueGame();
     initReflexiveGame();
     initQuestions();
 
-    // Resize Handler
     window.addEventListener('resize', initVocabGame);
   </script>
 </body>
